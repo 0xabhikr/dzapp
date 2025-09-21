@@ -1,34 +1,65 @@
 "use client";
 
-import { signInWithPopup } from "firebase/auth";
+import { useEffect, useState } from "react";
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+} from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 
-
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [checkingRedirect, setCheckingRedirect] = useState(true);
 
-  // If user is logged in, redirect to /home
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(
+    typeof navigator !== "undefined" ? navigator.userAgent : ""
+  );
+
+  // Handle redirect login results (only applies to mobile redirect sign-ins)
   useEffect(() => {
-    if (user) router.push("/home");
-  }, [user, router]);
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log("Redirect login success");
+          router.push("/home");
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect login error:", error);
+      })
+      .finally(() => {
+        setCheckingRedirect(false);
+      });
+  }, [router]);
+
+  // If already logged in, redirect
+  useEffect(() => {
+    if (!checkingRedirect && user) {
+      router.push("/home");
+    }
+  }, [user, checkingRedirect, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signInWithPopup(auth, googleProvider);
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+      }
     } catch (err) {
       console.error("Login failed", err);
       alert("Login failed. Try again.");
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || checkingRedirect) return <div>Loading...</div>;
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white min-h-screen flex justify-center items-center p-5 font-montserrat">
