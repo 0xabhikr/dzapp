@@ -76,7 +76,7 @@ export default function HomePage() {
     try {
       const userRef = doc(firestore, "users", user.uid);
       await updateDoc(userRef, { role: "DEV" });
-      setMessage("You are now a developer!");
+      setMessage("You are now a developer! Refresh the page");
       // Optionally refresh auth context to get updated role
     } catch (error) {
       setMessage("Failed to update role.");
