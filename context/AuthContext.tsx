@@ -8,7 +8,7 @@ import { getDoc, setDoc, doc, query, collection, where, getDocs } from "firebase
 
 interface ExtendedUser extends User {
   role: "SUPERUSER" | "ADMIN" | "MODDEV" | "USER" | null;
-  userNumber?: string; // add userNumber here as optional
+  userNumber?: string; // Your custom user number
 }
 
 interface AuthContextType {
@@ -25,7 +25,6 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-// Generate unique 8-digit userNumber as a string
 async function generateUniqueUserNumber() {
   const usersRef = collection(firestore, "users");
 
@@ -39,7 +38,7 @@ async function generateUniqueUserNumber() {
     if (querySnapshot.empty) {
       return randomNum;
     }
-    // Else loop and try again if collision (extremely unlikely)
+    // If collision (very unlikely), retry
   }
 }
 
@@ -55,7 +54,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const docSnap = await getDoc(userRef);
 
         if (!docSnap.exists()) {
-          // Generate unique userNumber
           const userNumber = await generateUniqueUserNumber();
 
           await setDoc(userRef, {
@@ -67,6 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         const data = (await getDoc(userRef)).data();
+
         const extendedUser: ExtendedUser = {
           ...firebaseUser,
           role: data?.role || "USER",
