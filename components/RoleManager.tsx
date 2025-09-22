@@ -31,18 +31,43 @@ export default function RoleManager() {
   }, [user]);
 
   const updateRole = async (targetUid: string, newRole: string) => {
-    const idToken = await user?.getIdToken();
+    if (!user?.uid) {
+      alert("User not authenticated");
+      return;
+    }
 
-    await fetch("/api/admin/set-role", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({ targetUid, newRole }),
-    });
+    try {
+      const res = await fetch("/api/admin/set-role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requesterUid: user.uid, // send current user UID directly
+          targetUid,
+          newRole,
+        }),
+      });
 
-    alert(`Role changed to ${newRole}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(`Error: ${data.error || "Unknown error"}`);
+        return;
+      }
+
+      alert(`Role changed to ${newRole}`);
+      // Optionally refresh users after change
+      const querySnapshot = await getDocs(collection(firestore, "users"));
+      const list: UserType[] = querySnapshot.docs.map((doc) => ({
+        uid: doc.id,
+        ...(doc.data() as Omit<UserType, "uid">),
+      }));
+      setUsers(list);
+    } catch (err) {
+      alert("Failed to update role");
+      console.error(err);
+    }
   };
 
   return (
@@ -58,8 +83,8 @@ export default function RoleManager() {
             <p className="text-sm text-gray-500">Role: {u.role}</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => updateRole(u.uid, "ADMIN")}>Make Admin</button>
-            <button onClick={() => updateRole(u.uid, "MODDEV")}>Make ModDev</button>
+            <button onClick={() => updateRole(u.uid, "ADMIN")}>Admin</button>
+            <button onClick={() => updateRole(u.uid, "MODDEV")}>ModDev</button>
             <button onClick={() => updateRole(u.uid, "USER")}>Revoke</button>
           </div>
         </div>
