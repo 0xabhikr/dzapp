@@ -4,11 +4,22 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, firestore } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { getDoc, setDoc, doc, query, collection, where, getDocs } from "firebase/firestore";
+import {
+  getDoc,
+  setDoc,
+  doc,
+  query,
+  collection,
+  where,
+  getDocs,
+} from "firebase/firestore";
+
+// Allowed roles
+type UserRole = "SUPERUSER" | "USER" | "DEV" | null;
 
 interface ExtendedUser extends User {
-  role: "SUPERUSER" | "ADMIN" | "MODDEV" | "USER" | null;
-  userNumber?: string; // Your custom user number
+  role: UserRole;
+  userNumber?: string;
 }
 
 interface AuthContextType {
@@ -31,14 +42,12 @@ async function generateUniqueUserNumber() {
   while (true) {
     const randomNum = Math.floor(10000000 + Math.random() * 90000000).toString();
 
-    // Check if this userNumber already exists
     const q = query(usersRef, where("userNumber", "==", randomNum));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
       return randomNum;
     }
-    // If collision (very unlikely), retry
   }
 }
 
@@ -58,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           await setDoc(userRef, {
             email: firebaseUser.email,
-            role: "USER", // default role
+            role: "USER", // Default role
             createdAt: new Date(),
             userNumber,
           });
