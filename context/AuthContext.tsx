@@ -2,11 +2,16 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, firestore } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { getDoc, setDoc, doc } from "firebase/firestore";
+
+interface ExtendedUser extends User {
+  role: "SUPERUSER" | "ADMIN" | "MODDEV" | "USER" | null;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: ExtendedUser | null;
   loading: boolean;
   logout: () => void;
 }
@@ -20,18 +25,36 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
-
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        const userRef = doc(firestore, "users", firebaseUser.uid);
+        const docSnap = await getDoc(userRef);
+
+        if (!docSnap.exists()) {
+          await setDoc(userRef, {
+            email: firebaseUser.email,
+            role: "USER", // default role
+            createdAt: new Date(),
+          });
+        }
+
+        const data = (await getDoc(userRef)).data();
+        const extendedUser: ExtendedUser = {
+          ...firebaseUser,
+          role: data?.role || "USER",
+        };
+
+        setUser(extendedUser);
+        setLoading(false);
         router.push("/home");
       } else {
+        setUser(null);
+        setLoading(false);
         router.push("/login");
       }
     });
