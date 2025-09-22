@@ -44,7 +44,7 @@ export default function RoleManager() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          requesterUid: user.uid, // current user Firebase UID
+          requesterUid: user.uid, 
           targetUid,
           newRole,
         }),
