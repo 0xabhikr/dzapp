@@ -6,9 +6,10 @@ import { collection, getDocs } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
 
 interface UserType {
-  uid: string;
+  uid: string; // Firebase UID
   email?: string;
   role?: "USER" | "ADMIN" | "SUPERUSER" | "MODDEV";
+  userNumber?: string; // your custom 8-digit number
 }
 
 export default function RoleManager() {
@@ -43,7 +44,7 @@ export default function RoleManager() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          requesterUid: user.uid, // send current user UID directly
+          requesterUid: user.uid, // current user Firebase UID
           targetUid,
           newRole,
         }),
@@ -57,7 +58,8 @@ export default function RoleManager() {
       }
 
       alert(`Role changed to ${newRole}`);
-      // Optionally refresh users after change
+
+      // Refresh users after change
       const querySnapshot = await getDocs(collection(firestore, "users"));
       const list: UserType[] = querySnapshot.docs.map((doc) => ({
         uid: doc.id,
@@ -79,7 +81,8 @@ export default function RoleManager() {
           className="border p-3 mb-2 flex justify-between items-center"
         >
           <div>
-            <p>{u.email}</p>
+            <p>Email: {u.email}</p>
+            <p>User Number: {u.userNumber || "N/A"}</p>
             <p className="text-sm text-gray-500">Role: {u.role}</p>
           </div>
           <div className="flex gap-2">
