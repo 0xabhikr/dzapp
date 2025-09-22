@@ -95,7 +95,7 @@ export default function HomePage() {
         <span className="uppercase text-blue-600 font-bold">{user.role}</span>
       </p>
 
-      {user.role !== "DEV" && (
+      {user.role !== "DEV" && user.role !== "SUPERUSER" && (
         <button
           onClick={becomeDeveloper}
           disabled={becomingDev}
@@ -104,6 +104,7 @@ export default function HomePage() {
           {becomingDev ? "Processing..." : "Become a Developer"}
         </button>
       )}
+
 
       {message && <p>{message}</p>}
 
