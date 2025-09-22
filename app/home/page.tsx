@@ -10,7 +10,8 @@ function UploadComponent() {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
 
-  if (user?.role !== "DEV") {
+  // Only allow DEV or SUPERUSER to access this UI
+  if (user?.role !== "DEV" && user?.role !== "SUPERUSER") {
     return null;
   }
 
